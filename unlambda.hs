@@ -42,5 +42,23 @@ apply (S2 x y) z      = do
 apply I x             = return x
 apply (PrintChar c) x = writer (x, [c])
 
+parse :: String -> (Call, String)
+parse (' ':rest) = parse rest
+parse ('\n':rest) = parse rest
+parse ('`':rest) =
+  let (f1, rest1) = parse rest
+      (f2, rest2) = parse rest1
+  in (Apply f1 f2, rest2)
+parse ('s':rest) = (CallS, rest)
+parse ('k':rest) = (CallK, rest)
+parse ('i':rest) = (CallI, rest)
+parse ('r':rest) = (CallNewline, rest)
+parse ('.':'*':rest) = (CallStar, rest)
+
 main = do
-  putStr $ snd $ runWriter $ eval $ Apply CallNewline (Apply CallStar CallK)
+  let prog = parse "\
+\```s``s``sii`ki\
+\  `k.*``s``s`ks\
+\ ``s`k`s`ks``s``s`ks``s`k`s`kr``s`k`sikk\
+\  `k``s`ksk "
+  putStr $ snd $ runWriter $ eval $ fst prog
